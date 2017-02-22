@@ -18,6 +18,22 @@ image_size_x = 240
 image_size_y = 320
 dataRoot = "./UCF-101/"
 
+def procImage(frame):
+  #frame1 = cap.read()
+  #prvs = cv2.cvtColor(frame1,cv2.COLOR_BGR2GRAY)
+  #hsv = np.zeros_like(frame1)
+  #hsv[...,1] = 255
+  fgbg = cv2.createBackgroundSubtractorMOG2(50, 16, False) #history, 
+  #Threshold on the squared Mahalanobis distance, and shadow detection bool 
+  fgbg.setBackgroundRatio(0.8) # frames before object becomes foreground
+  fgbg.setVarInit(500) # speed of adaption of new components
+  #ret, frame2 = cap.read()
+  #ret, frame2 = cap.read()    
+  frame2 = cv2.GaussianBlur(frame,(9,9),0)
+  fgmask = fgbg.apply(frame)
+  fgmask = fgbg.apply(frame,fgmask, 0)
+  return frame
+
 def extractData(folder, index):
   #tick = 0
   global errorCount
@@ -27,8 +43,8 @@ def extractData(folder, index):
   	print("Not a directory, moving along.")
   	return None, None
   i = 0
-  data = np.zeros(shape=(len(videoFileNames)*1/2, image_size_x, image_size_y), dtype=np.float32)
-  labels = np.zeros(shape=(len(videoFileNames)*1/2, 101), dtype=np.float32)
+  data = np.zeros(shape=(len(videoFileNames)*1, image_size_x, image_size_y), dtype=np.float32)
+  labels = np.zeros(shape=(len(videoFileNames)*1, 101), dtype=np.float32)
   for videoName in videoFileNames:
     #if tick < 2:
     #  tick = tick + 1
@@ -40,6 +56,8 @@ def extractData(folder, index):
       #i = 0
       print(frames)
       for _ in range(1):
+        if frames == 0:
+          continue
         cap.set(cv2.CAP_PROP_POS_FRAMES, int(frames * random.random()) % frames)
         ret, frame = cap.read()
         frame = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
@@ -51,6 +69,7 @@ def extractData(folder, index):
           print('Unexpected image shape: %s' % str(frame.shape))
           errorCount = errorCount + 1
           continue
+        frame = procImage(frame)
         im = np.ndarray(shape=(image_size_x, image_size_y), dtype=np.float32)
         for x in range(image_size_x):
           for y in range(image_size_y):

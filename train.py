@@ -27,8 +27,8 @@ def extractData(folder, index):
   	print("Not a directory, moving along.")
   	return None, None
   i = 0
-  data = np.zeros(shape=(len(videoFileNames)*1/2, image_size_x, image_size_y), dtype=np.float32)
-  labels = np.zeros(shape=(len(videoFileNames)*1/2, 101), dtype=np.float32)
+  data = np.zeros(shape=(len(videoFileNames)*1, image_size_x, image_size_y), dtype=np.float32)
+  labels = np.zeros(shape=(len(videoFileNames)*1, 101), dtype=np.float32)
   for videoName in videoFileNames:
     #if tick < 2:
     #  tick = tick + 1
@@ -39,6 +39,8 @@ def extractData(folder, index):
       frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
       #i = 0
       print(frames)
+      if frames == 0:
+        continue
       for _ in range(1):
         cap.set(cv2.CAP_PROP_POS_FRAMES, int(frames * random.random()) % frames)
         ret, frame = cap.read()
@@ -60,8 +62,8 @@ def extractData(folder, index):
         #cv2.waitKey(0)
         labels[i][index] = 1
         i = i + 1
-    except IOError as e:
-      print('Could not read:', image_file, ':', e, '- it\'s ok, skipping.')
+    except:
+      print('Something went wrong bro, skippin dat sheit')
   return data, labels
 
 def compileData(folder):
