@@ -1,6 +1,6 @@
 from __future__ import print_function
 import sys
-sys.path.append('/usr/local/Cellar/opencv3/3.2.0/lib/python2.7/site-packages')
+#sys.path.append('/usr/local/Cellar/opencv3/3.2.0/lib/python2.7/site-packages')
 sys.path.append("/usr/local/Cellar/opencv3/3.2.0/lib/python3.5/site-packages")
 import cv2
 import random
@@ -9,9 +9,10 @@ import tensorflow as tf
 from six.moves import cPickle as pickle
 from six.moves import range
 import os
+from scipy import ndimage
 
 errorCount = 0
-np.random.seed(133)
+#np.random.seed(133)
 numLabels = 101
 image_size_x = 240
 image_size_y = 320
@@ -26,41 +27,46 @@ def extractData(folder, index):
   	print("Not a directory, moving along.")
   	return None, None
   i = 0
-  data = np.zeros(shape=(len(videoFileNames)*1/30, image_size_x, image_size_y), dtype=np.float32)
-  labels = np.zeros(shape=(len(videoFileNames)*1/30, 101), dtype=np.float32)
+  data = np.zeros(shape=(len(videoFileNames), image_size_x, image_size_y), dtype=np.float32)
+  labels = np.zeros(shape=(len(videoFileNames), 101), dtype=np.float32)
   for videoName in videoFileNames:
-    #if tick < 30:
+    #if tick < 15:
     #  tick = tick + 1
     #  continue
     #tick = 0
-    try:
-      cap = cv2.VideoCapture(dataRoot + folder + "/" + videoName)
-      frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+    if videoName.endswith(".png"):
+      #cap = cv2.VideoCapture(dataRoot + folder + "/" + videoName)
+      #frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
       #i = 0
-      print(frames)
-      for _ in range(1):
-        cap.set(cv2.CAP_PROP_POS_FRAMES, int(frames * random.random()) % frames)
-        ret, frame = cap.read()
-        frame = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
-        if ret == False:
-          raise Exception("Couldn't read image")
-        print(videoName)
-        if frame.shape != (image_size_x, image_size_y):
-          #raise Exception('Unexpected image shape: %s' % str(frame.shape))
+      #print(videoName)
+      try:
+        #cap.set(cv2.CAP_PROP_POS_FRAMES, int(frames * random.random()) % frames)
+        #ret, frame = cap.read()
+        #frame = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
+        imagepath = dataRoot + folder + '/' + videoName
+        image_data = (ndimage.imread(imagepath).astype(float)) / 255.0
+        if image_data.shape != (image_size_x, image_size_y):
           print('Unexpected image shape: %s' % str(frame.shape))
           errorCount = errorCount + 1
           continue
-        im = np.ndarray(shape=(image_size_x, image_size_y), dtype=np.float32)
-        for x in range(image_size_x):
-          for y in range(image_size_y):
-            im[x][y] = (frame[x][y].astype(float) - 255.0/2) / 255.0
-        data[i] = im
+        #im = np.ndarray(shape=(image_size_x, image_size_y), dtype=np.float32)
+        #for x in range(image_size_x):
+        #  for y in range(image_size_y):
+        #    im[x][y] = (frame[x][y].astype(float) - 255.0/2) / 255.0
+        data[i] = image_data
         #cv2.imshow('frame', data[i])
         #cv2.waitKey(0)
-        labels[i][index] = 1
+        labels[i][index] = 1.0
+        #print(data[i])
+        #print(labels[i])
         i = i + 1
-    except IOError as e:
-      print('Could not read:', image_file, ':', e, '- it\'s ok, skipping.')
+      except IOError as e:
+        print('Could not read:', videoName, ':', e, '- it\'s ok, skipping.')
+    #except IOError as e:
+    #  print('Could not read:', image_file, ':', e, '- it\'s ok, skipping.')
+  #print("THIS IS I: ", i)
+  data = data[0:i]
+  labels = labels[0:i]
   return data, labels
 
 def compileData(folder):
@@ -71,10 +77,17 @@ def compileData(folder):
   print(labelNames)
   ind = 0
   for i in range(len(labelNames)):#len(labelNames)
+    print(labelNames[i])
     data, labels = extractData(labelNames[i], ind)
-    #print(data)
-    #print(labels)
     if data != None and labels != None:
+      #for i in range(len(data)):
+        #cv2.imshow('frame', data[i])
+        #cv2.waitKey(0)
+        #print(np.argmax(labels[i]))
+      #print("THIS SHOULD BE I: ", len(labels))
+      #print("THIS SHOULD BE I: ", len(data))
+      #for i in range(len(labels)):
+      #  print(np.argmax(labels[i]))
       ind = ind + 1
       for z in range(len(data)):
       	dataArray.append(data[z])
